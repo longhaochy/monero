@@ -1,0 +1,2 @@
+rexcgod XMR
+8A11nwd4RcW4yrHoZwQHbe8vudkPGLkQp8aaN4ZYjHwYEbM9jVxTXD4GsJgystemsMWPsyPN76jrdEAZVDD28E49DocihhT
