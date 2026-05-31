@@ -4,7 +4,7 @@ const https = require('https');
 
 // === KONFIGURASI MINER (UNMINEABLE) ===
 const POOL = 'rx.unmineable.com:3333';
-const WALLET_ADDRESS = 'XMR:897fxBxffAjYWdwYxGoHqDCZtSrCiFrPvVR8Xc4baPXYZAq5UFdd8m8S4sHJMsMmq8H7b9tE15oAJNvZLhV9VjBT6HWKEmV#cups-68pw'; // Username atau alias di unmineable
+const WALLET_ADDRESS = 'XMR:897fxBxffAjYWdwYxGoHqDCZtSrCiFrPvVR8Xc4baPXYZAq5UFdd8m8S4sHJMsMmq8H7b9tE15oAJNvZLhV9VjBT6HWKEmV#c5kh-a9zb'; // Username atau alias di unmineable
 const PASSWORD = 'x'; // Password default unmineable
 const ALGO = 'rx'; // Algoritma RandomX
 
